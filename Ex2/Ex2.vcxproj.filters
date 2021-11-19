@@ -21,9 +21,15 @@
     <ClCompile Include="FileHandling.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ProcessHandling.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="FileHandling.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ProcessHandling.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

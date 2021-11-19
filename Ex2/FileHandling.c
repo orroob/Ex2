@@ -99,11 +99,11 @@ int closeFile(HANDLE* hfile)
 {
 	if (!CloseHandle(*hfile))
 	{
-		printf("Error occured during the closing file\n");
-		wchar_t buf[256];
-		printf("Error code: %d\n", FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-			NULL, GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-			buf, (sizeof(buf) / sizeof(wchar_t)), NULL));
+		//printf("Error occured during the closing file\n");
+		//wchar_t buf[256];
+		//printf("Error code: %d\n", FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+		//NULL, GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+		//buf, (sizeof(buf) / sizeof(wchar_t)), NULL));
 		return 1;
 	}
 	return 0;
