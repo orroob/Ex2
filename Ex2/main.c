@@ -77,13 +77,13 @@ int threadExecute(int index, int weights[])
 	EvalFileData = calloc(5, sizeof(char));
 	int maxSize = 10;
 	char* tok1 = NULL, tok2 = NULL, tok3 = NULL, tok4 = NULL;
-	char delim[] = "\n";
+	const char delim[] = "\n";
 	int grades[4] = { 0 };
-
-	RealFileData = strtok_s(allFilesData[0], &maxSize, delim, &tok1);
-	HumanFileData = strtok_s(allFilesData[1], &maxSize, delim, &tok2);
-	EngFileData = strtok_s(allFilesData[2], &maxSize, delim, &tok3);
-	EvalFileData = strtok_s(allFilesData[3], &maxSize, delim, &tok4);
+	/*
+	RealFileData = strtok_s(allFilesData[0], delim, &tok1);
+	HumanFileData = strtok_s(allFilesData[1], delim, &tok2);
+	EngFileData = strtok_s(allFilesData[2], delim, &tok3);
+	EvalFileData = strtok_s(allFilesData[3], delim, &tok4);
 
 	grades[0] = strtol(RealFileData, NULL, 10);
 	grades[1] = strtol(HumanFileData, NULL, 10);
@@ -102,14 +102,22 @@ int threadExecute(int index, int weights[])
 		free(EvalFileData);
 		return 1;
 	}
-
+	*/
+	int result = 0;
+	char result_str[6] = { 0 };
 	while ((RealFileData) != NULL)
 	{	
-		RealFileData = strtok_s(NULL, &maxSize, delim, &tok1);
-		HumanFileData = strtok_s(NULL, &maxSize, delim, &tok2);
-		EngFileData = strtok_s(NULL, &maxSize, delim, &tok3);
-		EvalFileData = strtok_s(NULL, &maxSize, delim, &tok4);
-		
+		//RealFileData = strtok_s(NULL, delim, &tok1);
+		//HumanFileData = strtok_s(NULL,delim, &tok2);
+		//EngFileData = strtok_s(NULL, delim, &tok3);
+		//EvalFileData = strtok_s(NULL, delim, &tok4);
+		RealFileData = strtok_s(allFilesData[0], delim, &allFilesData[0]);
+		HumanFileData = strtok_s(allFilesData[1], delim, &allFilesData[1]);
+		EngFileData = strtok_s(allFilesData[2], delim, &allFilesData[2]);
+		EvalFileData = strtok_s(allFilesData[3], delim, &allFilesData[3]);
+
+		if (RealFileData == NULL)
+			break;
 		grades[0] = strtol(RealFileData, NULL, 10);
 		grades[1] = strtol(HumanFileData, NULL, 10);
 		grades[2] = strtol(EngFileData, NULL, 10);
@@ -132,10 +140,10 @@ int threadExecute(int index, int weights[])
 	free(EngFileData);
 	free(EvalFileData);
 
-	for (int i = 0; i < 4; i++)
-	{
-		free(allFilesData[i]);
-	}
+	//for (int i = 0; i < 4; i++)
+	//{
+	//	free(allFilesData[i]);
+	//}
 	return exitCode(allHandles, 5);
 }
 
