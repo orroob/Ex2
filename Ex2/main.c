@@ -1,3 +1,7 @@
+#define _CRT_SECURE_NO_WARNINGS
+#define READ 0
+#define WRITE 1
+
 #include <string.h>
 #include <Windows.h>
 #include <stdio.h>
@@ -5,8 +9,6 @@
 #include "FileHandling.h"
 #include "ProcessHandling.h"
 
-#define READ 0
-#define WRITE 1
 
 typedef struct openAllFiles_Arguments
 {
@@ -30,40 +32,174 @@ int exitCode(HANDLE hfiles[], int handlesNum)
 	return exitCode;
 }
 
-DWORD WINAPI openAllFiles(HANDLE *allHandles, int index)
+int calcDigitsNum(int num)
 {
+	int count = 0;
 
-	if (openFile(&(allHandles[0]), ".\\Real\\Real0.txt", READ))
+	if (num == 0)
+		return 1;
+
+	while (num != 0)
 	{
-		//first file failed
-		return 0;
+		num /= 10;
+		count++;
+	}
+	return count;
+}
+
+int threadExecute(int index, int weights[])
+{
+	HANDLE allHandles[5]; // = { RealFile , HumanFile , EngFile, EvalFile, ResultsFile };
+
+	if (openAllFiles(allHandles, index) != 5)
+	{
+		//not all files were opened successfuly
+		return 1;
+	}
+	
+	char* allFilesData[4];// = { RealFileData, HumanFileData, EngFileData, EvalFileData, ResultsFileData };
+	int size = 0;
+
+	for (int i = 0; i < 4; i++)
+	{
+		size = GetFileSize(allHandles[i], NULL);
+		if (size == INVALID_FILE_SIZE)
+			break;
+		allFilesData[i] = malloc(sizeof(char*) * size);
+		
+		readFileSimple(allHandles[i], allFilesData[i], size);
 	}
 
-	if (openFile(&(allHandles[1]), ".\\Human\\Human0.txt", READ))
+	char *RealFileData, *HumanFileData, *EngFileData, *EvalFileData, *ResultsFileData;
+	RealFileData = calloc(5, sizeof(char));
+	HumanFileData = calloc(5, sizeof(char));
+	EngFileData = calloc(5, sizeof(char));
+	EvalFileData = calloc(5, sizeof(char));
+	int maxSize = 10;
+	char* tok1 = NULL, tok2 = NULL, tok3 = NULL, tok4 = NULL;
+	char delim[] = "\n";
+	int grades[4] = { 0 };
+
+	RealFileData = strtok_s(allFilesData[0], &maxSize, delim, &tok1);
+	HumanFileData = strtok_s(allFilesData[1], &maxSize, delim, &tok2);
+	EngFileData = strtok_s(allFilesData[2], &maxSize, delim, &tok3);
+	EvalFileData = strtok_s(allFilesData[3], &maxSize, delim, &tok4);
+
+	grades[0] = strtol(RealFileData, NULL, 10);
+	grades[1] = strtol(HumanFileData, NULL, 10);
+	grades[2] = strtol(EngFileData, NULL, 10);
+	grades[3] = strtol(EvalFileData, NULL, 10);
+
+	int result = calcAvg(weights, grades);
+	char result_str[6] = { 0 };
+	sprintf(result_str, "%d\r\n", result);
+
+	if (WriteToFile(allHandles[4], result_str, strlen(result_str)))
 	{
-		//first file succeeded, second file failed
+		free(RealFileData);
+		free(HumanFileData);
+		free(EngFileData);
+		free(EvalFileData);
 		return 1;
 	}
 
-	if (openFile(&(allHandles[2]), ".\\Eng\\Eng0.txt", READ))
+	while ((RealFileData) != NULL)
+	{	
+		RealFileData = strtok_s(NULL, &maxSize, delim, &tok1);
+		HumanFileData = strtok_s(NULL, &maxSize, delim, &tok2);
+		EngFileData = strtok_s(NULL, &maxSize, delim, &tok3);
+		EvalFileData = strtok_s(NULL, &maxSize, delim, &tok4);
+		
+		grades[0] = strtol(RealFileData, NULL, 10);
+		grades[1] = strtol(HumanFileData, NULL, 10);
+		grades[2] = strtol(EngFileData, NULL, 10);
+		grades[3] = strtol(EvalFileData, NULL, 10);
+
+		result = calcAvg(weights, grades);
+		sprintf(result_str, "%d\r\n", result);
+
+		if (WriteToFile(allHandles[4], result_str, strlen(result_str)))
+		{
+			free(RealFileData);
+			free(HumanFileData);
+			free(EngFileData);
+			free(EvalFileData);
+			return 1;
+		}
+	}
+	free(RealFileData);
+	free(HumanFileData);
+	free(EngFileData);
+	free(EvalFileData);
+
+	for (int i = 0; i < 4; i++)
 	{
-		//first and second file succeeded, third file failed
+		free(allFilesData[i]);
+	}
+	return exitCode(allHandles, 5);
+}
+
+
+
+int readFileSimple(HANDLE hfile, char *buffer, int size)
+{
+	//DWORD size = GetFileSize(hfile, NULL);
+	if (ReadFromFile(hfile, buffer, size))
+	{
+		return 1;
+	}
+
+	return 0;
+}
+
+int openFileSimple(HANDLE *hfile, char* fileName, int index, int format)
+{
+
+	int a = (strlen(".////.txt") + 2*strlen(fileName) + calcDigitsNum(index))+1;
+	char* buffer;
+	buffer = malloc(sizeof(char*) * (strlen(".////.txt") + 2*strlen(fileName) + calcDigitsNum(index))+1);
+	if (buffer == NULL)
+	{
+		//printf("error allocating memory\n");
+		return 1;
+	}
+	sprintf_s(buffer, (strlen(".////.txt") + 2*strlen(fileName) + calcDigitsNum(index)), ".\\%s\\%s%d.txt", fileName,fileName, index);
+	
+	if (openFile(hfile, buffer, format))
+	{
+		//first file failed
+		free(buffer);
+		return 1;
+	}
+	free(buffer);
+	return 0;
+}
+
+int openAllFiles(HANDLE *allHandles, int index)
+{
+	if (openFileSimple(&(allHandles[0]), "Real", index, READ))
+	{
+		return 0;
+	}
+
+	if (openFileSimple(&(allHandles[1]), "Human", index, READ))
+	{
+		return 1;
+	}
+	
+	if (openFileSimple(&(allHandles[2]), "Eng", index, READ))
+	{
 		return 2;
 	}
 
-	if (openFile(&(allHandles[3]), ".\\Eval\\Eval0.txt", READ))
+	if (openFileSimple(&(allHandles[3]), "Eval", index, READ))
 	{
-		//first and second file succeeded, third file failed
 		return 3;
 	}
-
-	if (openFile(&(allHandles[4]), ".\\Results\\Results0.txt", WRITE))
+	if (openFileSimple(&(allHandles[4]), "Results", index, WRITE))
 	{
-		//first and second file succeeded, third file failed
 		return 4;
 	}
-
-	WriteToFile(allHandles[4], "aaa", 3);
 
 	return 5;
 }
@@ -71,11 +207,13 @@ DWORD WINAPI openAllFiles(HANDLE *allHandles, int index)
 int calcAvg(int weights[], int grades[])
 {
 	float avg = 0;
+	float weight_sum=0;
 	for (int i = 0; i < 4; i++)
 	{
 		avg += weights[i] * grades[i];
+		weight_sum += weights[i];
 	}
-	return (int)(avg / 4);
+	return (int)(avg / weight_sum);
 }
 
 int main(int argc, char* argv[])
@@ -103,12 +241,14 @@ int main(int argc, char* argv[])
 	Args arguments = { allHandles, 0 };
 	DWORD arr[10];
 
+	int weights[] = { 40, 35, 20, 5 };
 	//int count = openAllFiles(allHandles, 0);
+	threadExecute(0, weights);
 
-	openThread(&threadHandle, &openAllFiles, &arguments, &arr[0]);
+	//openThread(&threadHandle, &openAllFiles, &arguments, &arr[0]);
 	//WaitForMultipleObjects(1, &threadHandle, 1, INFINITE);
-	WaitForSingleObject(threadHandle, 10000000);
-	closeFile(&threadHandle);
+	//WaitForSingleObject(threadHandle, 10000000);
+	//closeFile(&threadHandle);
 	
 	//return (count!=5)?1:exitCode(allHandles, count);
 
@@ -152,7 +292,7 @@ int main(int argc, char* argv[])
 	//}
 	//hfiles[4] = ResultsFile;
 
-	return exitCode(allHandles, 5);
+	//return exitCode(allHandles, 5);
 
 	
 	return 0;
