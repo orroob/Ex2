@@ -264,42 +264,6 @@ int main(int argc, char* argv[])
 
 	int schoolNum = strtol(argv[1], NULL, 10);
 
-
-	//if (openFile(&RealFile, ".\\Real\\Real0.txt", READ))
-	//{
-	//	//first file failed
-	//	return(1);
-	//}
-	//hfiles[0] = RealFile;
-	//
-	//if (openFile(&HumanFile, ".\\Human\\Human0.txt", READ))
-	//{
-	//	//first file succeeded, second file failed
-	//	return 1 || exitCode(hfiles, 1);
-	//}
-	//hfiles[1] = HumanFile;
-	//
-	//if (openFile(&EngFile, ".\\Eng\\Eng0.txt", READ))
-	//{
-	//	//first and second file succeeded, third file failed
-	//	return 1 || exitCode(hfiles, 2);
-	//}
-	//hfiles[2] = EngFile;
-	//
-	//if (openFile(&EvalFile, ".\\Eval\\Eval0.txt", READ))
-	//{
-	//	//first and second file succeeded, third file failed
-	//	return 1 || exitCode(hfiles, 2);
-	//}
-	//hfiles[3] = EvalFile;
-	//
-	//if (openFile(&ResultsFile, ".\\Results\\Results0.txt", WRITE))
-	//{
-	//	//first and second file succeeded, third file failed
-	//	return 1 || exitCode(hfiles, 2);
-	//}
-	//hfiles[4] = ResultsFile;
-
 	//return exitCode(allHandles, 5);
 
 	
