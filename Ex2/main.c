@@ -220,7 +220,7 @@ int main(int argc, char* argv[])
 	//	//return 1;
 	//}
 
-	HANDLE threadHandle = NULL;
+	HANDLE threadHandles[10] = { NULL };
 	HANDLE allHandles[5] = { RealFile , HumanFile , EngFile, EvalFile, ResultsFile };
 	DWORD arr[10];
 
@@ -236,14 +236,40 @@ int main(int argc, char* argv[])
 
 	int schoolNum = strtol(argv[1], NULL, 10);
 	indexes = malloc(schoolNum * sizeof(int));
-	indexes[0] = 0;
-	indexes[1] = 1;
-	//printf("starting thread\n");
+	if (indexes == NULL)
+	{
 
-	openThread(&threadHandle, &threadExecute, indexes[1], &arr[0]);
+	}
+
+	//printf("starting thread\n");
+	int i, j;
+	for (i = 0; i < schoolNum; i+=10)
+	{
+		for (j = 0; j < 10; j++)
+		{
+			if (i + j >= schoolNum)
+				break;
+			indexes[i+j] = i+j;
+			if (openThread(&threadHandles[j], &threadExecute, indexes[i + j], &arr[j]))
+			{
+				continue;
+			}
+		}
+		WaitForMultipleObjects(j, threadHandles, 1, 10000000);
+		
+		for (int k = 0; k < j; k++)
+		{
+			if (closeFile(&(threadHandles[k])))
+			{
+				continue;
+			}
+		}
+	}
+
+	//openThread(&threadHandles[0], &threadExecute, indexes[1], &arr[0]);
 	//WaitForMultipleObjects(1, &threadHandle, 1, INFINITE);
-	WaitForSingleObject(threadHandle, 10000000);
-	closeFile(&threadHandle);
+	//WaitForSingleObject(threadHandle, 10000000);
+	//closeFile(&threadHandle);
 	free(indexes);
 	//return (count!=5)?1:exitCode(allHandles, count);
 
