@@ -43,11 +43,11 @@ int WriteToFile(HANDLE hfile, char* buffer, int messageLen)
 	DWORD writtenMassageLen;
 	if (!WriteFile(hfile, buffer, messageLen, &writtenMassageLen, NULL))
 	{
-		printf("Error occured during the writing to file \n");
+		/*printf("Error occured during the writing to file \n");
 		wchar_t buf[256];
 		printf("Error code: %d\n", FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
 			NULL, GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-			buf, (sizeof(buf) / sizeof(wchar_t)), NULL));
+			buf, (sizeof(buf) / sizeof(wchar_t)), NULL));*/
 		return 1;
 	}
 	if (writtenMassageLen != messageLen)
@@ -71,20 +71,20 @@ int ReadFromFile(HANDLE hfile, char* buffer, int messageLen)
 	DWORD readMassageLen;
 	if (!ReadFile(hfile, buffer, messageLen, &readMassageLen, NULL))
 	{
-		printf("Error occured during the reading from file \n");
+		/*printf("Error occured during the reading from file \n");
 		wchar_t buf[256];
 		printf("Error code: %d\n", FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
 			NULL, GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-			buf, (sizeof(buf) / sizeof(wchar_t)), NULL));
+			buf, (sizeof(buf) / sizeof(wchar_t)), NULL));*/
 		return 1;
 	}
 	buffer[messageLen] = '\0';
 
 	if (readMassageLen != messageLen)
 	{
-		printf("Error occured during the reading from the file \n");
+		/*printf("Error occured during the reading from the file \n");
 		wchar_t buf[256];
-		printf("Not all of the data was read successfully\n");
+		printf("Not all of the data was read successfully\n");*/
 		return 1;
 	}
 	return 0;
@@ -142,11 +142,11 @@ int createDir(char* pathName)
 {
 	if (!CreateDirectoryA(pathName, NULL))
 	{
-		printf("Error occured during the creating directory: %s\n", pathName);
+		/*printf("Error occured during the creating directory: %s\n", pathName);
 		wchar_t buf[256];
 		printf("Error code: %d\n", FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
 			NULL, GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-			buf, (sizeof(buf) / sizeof(wchar_t)), NULL));
+			buf, (sizeof(buf) / sizeof(wchar_t)), NULL));*/
 		return 1;
 	}
 	return 0;

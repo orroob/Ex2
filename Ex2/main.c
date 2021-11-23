@@ -9,12 +9,7 @@
 #include "FileHandling.h"
 #include "ProcessHandling.h"
 
-
-typedef struct openAllFiles_Arguments
-{
-	HANDLE allHandles[5];
-	int index;
-}Args;
+int weights[4];
 
 /// <summary>
 /// This function closes all open handles before exiting the code.
@@ -47,10 +42,11 @@ int calcDigitsNum(int num)
 	return count;
 }
 
-int threadExecute(int index, int weights[])
+DWORD WINAPI threadExecute(int index)
 {
+	createDir("started");
 	HANDLE allHandles[5]; // = { RealFile , HumanFile , EngFile, EvalFile, ResultsFile };
-
+	//printf("thread started\n");
 	if (openAllFiles(allHandles, index) != 5)
 	{
 		//not all files were opened successfuly
@@ -69,6 +65,7 @@ int threadExecute(int index, int weights[])
 		
 		readFileSimple(allHandles[i], allFilesData[i], size);
 	}
+	createDir("started2");
 
 	char *RealFileData, *HumanFileData, *EngFileData, *EvalFileData, *ResultsFileData;
 	RealFileData = calloc(5, sizeof(char));
@@ -76,35 +73,13 @@ int threadExecute(int index, int weights[])
 	EngFileData = calloc(5, sizeof(char));
 	EvalFileData = calloc(5, sizeof(char));
 	int maxSize = 10;
-	char* tok1 = NULL, tok2 = NULL, tok3 = NULL, tok4 = NULL;
 	const char delim[] = "\n";
 	int grades[4] = { 0 };
-	/*
-	RealFileData = strtok_s(allFilesData[0], delim, &tok1);
-	HumanFileData = strtok_s(allFilesData[1], delim, &tok2);
-	EngFileData = strtok_s(allFilesData[2], delim, &tok3);
-	EvalFileData = strtok_s(allFilesData[3], delim, &tok4);
 
-	grades[0] = strtol(RealFileData, NULL, 10);
-	grades[1] = strtol(HumanFileData, NULL, 10);
-	grades[2] = strtol(EngFileData, NULL, 10);
-	grades[3] = strtol(EvalFileData, NULL, 10);
-
-	int result = calcAvg(weights, grades);
-	char result_str[6] = { 0 };
-	sprintf(result_str, "%d\r\n", result);
-
-	if (WriteToFile(allHandles[4], result_str, strlen(result_str)))
-	{
-		free(RealFileData);
-		free(HumanFileData);
-		free(EngFileData);
-		free(EvalFileData);
-		return 1;
-	}
-	*/
 	int result = 0;
 	char result_str[6] = { 0 };
+	createDir("started3");
+
 	while ((RealFileData) != NULL)
 	{	
 		//RealFileData = strtok_s(NULL, delim, &tok1);
@@ -122,9 +97,12 @@ int threadExecute(int index, int weights[])
 		grades[1] = strtol(HumanFileData, NULL, 10);
 		grades[2] = strtol(EngFileData, NULL, 10);
 		grades[3] = strtol(EvalFileData, NULL, 10);
+		createDir("before");
 
 		result = calcAvg(weights, grades);
+
 		sprintf(result_str, "%d\r\n", result);
+		createDir("after");
 
 		if (WriteToFile(allHandles[4], result_str, strlen(result_str)))
 		{
@@ -146,8 +124,6 @@ int threadExecute(int index, int weights[])
 	//}
 	return exitCode(allHandles, 5);
 }
-
-
 
 int readFileSimple(HANDLE hfile, char *buffer, int size)
 {
@@ -238,31 +214,41 @@ int main(int argc, char* argv[])
 	HANDLE EvalFile = NULL;				// handle to the plain text file
 	HANDLE ResultsFile = NULL;			// handle to the plain text file
 
-	
+
 	//if (createDir("Results"))
 	//{
-	//	return 1;
+	//	//return 1;
 	//}
 
 	HANDLE threadHandle = NULL;
 	HANDLE allHandles[5] = { RealFile , HumanFile , EngFile, EvalFile, ResultsFile };
-	Args arguments = { allHandles, 0 };
 	DWORD arr[10];
 
-	int weights[] = { 40, 35, 20, 5 };
+	weights[0] = strtol(argv[2], NULL, 10);
+	weights[1] = strtol(argv[3], NULL, 10);
+	weights[2] = strtol(argv[4], NULL, 10);
+	weights[3] = strtol(argv[5], NULL, 10);
 	//int count = openAllFiles(allHandles, 0);
-	threadExecute(0, weights);
+	//threadExecute(1, weights);
 
-	//openThread(&threadHandle, &openAllFiles, &arguments, &arr[0]);
-	//WaitForMultipleObjects(1, &threadHandle, 1, INFINITE);
-	//WaitForSingleObject(threadHandle, 10000000);
-	//closeFile(&threadHandle);
 	
+	int *indexes;
+
+	int schoolNum = strtol(argv[1], NULL, 10);
+	indexes = malloc(schoolNum * sizeof(int));
+	indexes[0] = 0;
+	indexes[1] = 1;
+	//printf("starting thread\n");
+
+	openThread(&threadHandle, &threadExecute, indexes[1], &arr[0]);
+	//WaitForMultipleObjects(1, &threadHandle, 1, INFINITE);
+	WaitForSingleObject(threadHandle, 10000000);
+	closeFile(&threadHandle);
+	free(indexes);
 	//return (count!=5)?1:exitCode(allHandles, count);
 
 	//HANDLE hfiles[5] = { 0 }; //array of the handles to use when exitting the code
 
-	int schoolNum = strtol(argv[1], NULL, 10);
 
 	//return exitCode(allHandles, 5);
 
