@@ -1,4 +1,7 @@
 #include "ProcessHandling.h"
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
 
 int openProcess(char* command, STARTUPINFO	*startinfo, PROCESS_INFORMATION *procinfo)
 {

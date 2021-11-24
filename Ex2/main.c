@@ -1,13 +1,20 @@
 #define _CRT_SECURE_NO_WARNINGS
 #define READ 0
 #define WRITE 1
-
+ #define _CRTDBG_MAP_ALLOC
+#include <crtdbg.h>
 #include <string.h>
 #include <Windows.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "FileHandling.h"
 #include "ProcessHandling.h"
+/*
+HW2
+Philip Dolav 322656273
+Or Roob
+*/
+
 
 int weights[4]; // Global Parameter that each Thread gets from cmd
 
@@ -70,41 +77,41 @@ DWORD WINAPI threadExecute(int index)
 		size = GetFileSize(allHandles[i], NULL);
 		if (size == INVALID_FILE_SIZE)
 			break;
-		allFilesData[i] = malloc(sizeof(char*) * size);
-		if (allFilesData[i] == NULL)
+		//allFilesData[i] = malloc(sizeof(char*) * size);
+		/*if (allFilesData[i] == NULL)
 		{
 			printf("error allocating memory\n");
 			return 1;
-		}
+		}*/
 		readFileSimple(allHandles[i], allFilesData[i], size);
 	}
 
 
-	char* RealFileData, * HumanFileData, * EngFileData, * EvalFileData, * ResultsFileData;
-	RealFileData = calloc(5, sizeof(char));
+	char* RealFileData=NULL, * HumanFileData = NULL, * EngFileData = NULL, * EvalFileData = NULL, * ResultsFileData = NULL;
+	/*RealFileData = calloc(5, sizeof(char));
 	if (RealFileData == NULL)
 	{
-		//printf("error allocating memory\n");
+		printf("error allocating memory\n");
 		return 1;
 	}
 	HumanFileData = calloc(5, sizeof(char));
 	if (HumanFileData == NULL)
 	{
-		//printf("error allocating memory\n");
+		printf("error allocating memory\n");
 		return 1;
 	}
 	EngFileData = calloc(5, sizeof(char));
 	if (EngFileData == NULL)
 	{
-		//printf("error allocating memory\n");
+		printf("error allocating memory\n");
 		return 1;
 	}
 	EvalFileData = calloc(5, sizeof(char));
 	if (EvalFileData == NULL)
 	{
-		//printf("error allocating memory\n");
+		printf("error allocating memory\n");
 		return 1;
-	}
+	}*/
 	int maxSize = 10;
 	const char delim[] = "\n";
 	int grades[4] = { 0 };
@@ -316,5 +323,7 @@ int main(int argc, char* argv[])
 		}
 	}
 	free(indexes);
+	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+		printf("%d", _CrtDumpMemoryLeaks());
 	return 0;
 }
