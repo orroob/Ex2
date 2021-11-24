@@ -9,7 +9,7 @@
 #include "FileHandling.h"
 #include "ProcessHandling.h"
 
-int weights[4];
+int weights[4]; // Global Parameter that each Thread gets from cmd
 
 /// <summary>
 /// This function closes all open handles before exiting the code.
@@ -26,7 +26,11 @@ int exitCode(HANDLE hfiles[], int handlesNum)
 	}
 	return exitCode;
 }
-
+/// <summary>
+/// This function extracts number of digits. for example 100/10 = 3
+/// </summary>
+/// <param name="num"> Grade getting smaller each time</param>
+/// <returns> Returns Number of digits</returns>
 int calcDigitsNum(int num)
 {
 	int count = 0;
@@ -41,19 +45,24 @@ int calcDigitsNum(int num)
 	}
 	return count;
 }
-
+/// <summary>
+/// this function opens all files needed for the specific Thread with its index,calculates the average student by student and then
+///writes all of the grades to Results#index file
+/// </summary>
+/// <param name="index"> School Number </param>
+/// <returns> The function returns 0 if succeeded, 1 otherwise </returns>
 DWORD WINAPI threadExecute(int index)
 {
-	createDir("started");
-	HANDLE allHandles[5]; // = { RealFile , HumanFile , EngFile, EvalFile, ResultsFile };
-	//printf("thread started\n");
+
+	HANDLE allHandles[5]; //{ RealFile , HumanFile , EngFile, EvalFile, ResultsFile }
+
 	if (openAllFiles(allHandles, index) != 5)
 	{
 		//not all files were opened successfuly
 		return 1;
 	}
-	
-	char* allFilesData[4];// = { RealFileData, HumanFileData, EngFileData, EvalFileData, ResultsFileData };
+
+	char* allFilesData[4];// { RealFileData, HumanFileData, EngFileData, EvalFileData, ResultsFileData }
 	int size = 0;
 
 	for (int i = 0; i < 4; i++)
@@ -62,30 +71,49 @@ DWORD WINAPI threadExecute(int index)
 		if (size == INVALID_FILE_SIZE)
 			break;
 		allFilesData[i] = malloc(sizeof(char*) * size);
-		
+		if (allFilesData[i] == NULL)
+		{
+			printf("error allocating memory\n");
+			return 1;
+		}
 		readFileSimple(allHandles[i], allFilesData[i], size);
 	}
-	createDir("started2");
 
-	char *RealFileData, *HumanFileData, *EngFileData, *EvalFileData, *ResultsFileData;
+
+	char* RealFileData, * HumanFileData, * EngFileData, * EvalFileData, * ResultsFileData;
 	RealFileData = calloc(5, sizeof(char));
+	if (RealFileData == NULL)
+	{
+		//printf("error allocating memory\n");
+		return 1;
+	}
 	HumanFileData = calloc(5, sizeof(char));
+	if (HumanFileData == NULL)
+	{
+		//printf("error allocating memory\n");
+		return 1;
+	}
 	EngFileData = calloc(5, sizeof(char));
+	if (EngFileData == NULL)
+	{
+		//printf("error allocating memory\n");
+		return 1;
+	}
 	EvalFileData = calloc(5, sizeof(char));
+	if (EvalFileData == NULL)
+	{
+		//printf("error allocating memory\n");
+		return 1;
+	}
 	int maxSize = 10;
 	const char delim[] = "\n";
 	int grades[4] = { 0 };
-
 	int result = 0;
 	char result_str[6] = { 0 };
-	createDir("started3");
 
-	while ((RealFileData) != NULL)
-	{	
-		//RealFileData = strtok_s(NULL, delim, &tok1);
-		//HumanFileData = strtok_s(NULL,delim, &tok2);
-		//EngFileData = strtok_s(NULL, delim, &tok3);
-		//EvalFileData = strtok_s(NULL, delim, &tok4);
+
+	while ((RealFileData) != NULL) // While we didnt get to the end of our Files
+	{	// Start parsing the file grade by grade with Specified Delimiter \n
 		RealFileData = strtok_s(allFilesData[0], delim, &allFilesData[0]);
 		HumanFileData = strtok_s(allFilesData[1], delim, &allFilesData[1]);
 		EngFileData = strtok_s(allFilesData[2], delim, &allFilesData[2]);
@@ -93,18 +121,16 @@ DWORD WINAPI threadExecute(int index)
 
 		if (RealFileData == NULL)
 			break;
-		grades[0] = strtol(RealFileData, NULL, 10);
+		grades[0] = strtol(RealFileData, NULL, 10); // convert to int
 		grades[1] = strtol(HumanFileData, NULL, 10);
 		grades[2] = strtol(EngFileData, NULL, 10);
 		grades[3] = strtol(EvalFileData, NULL, 10);
-		createDir("before");
 
-		result = calcAvg(weights, grades);
+		result = calcAvg(weights, grades); // Calculate Average 
 
-		sprintf(result_str, "%d\r\n", result);
-		createDir("after");
+		sprintf(result_str, "%d\r\n", result);  //adding School Number to the end of file name.
 
-		if (WriteToFile(allHandles[4], result_str, strlen(result_str)))
+		if (WriteToFile(allHandles[4], result_str, strlen(result_str))) // Free Memory if failed writing
 		{
 			free(RealFileData);
 			free(HumanFileData);
@@ -117,17 +143,19 @@ DWORD WINAPI threadExecute(int index)
 	free(HumanFileData);
 	free(EngFileData);
 	free(EvalFileData);
-
-	//for (int i = 0; i < 4; i++)
-	//{
-	//	free(allFilesData[i]);
-	//}
 	return exitCode(allHandles, 5);
 }
 
-int readFileSimple(HANDLE hfile, char *buffer, int size)
+/// <summary>
+/// This function reads data from a file and places it to a buffer, using winAPI's ReadFile function. Failure can be caused by ReadFile failure, or when the read data's length isn't equal to the given messageLen.
+/// </summary>
+/// <param name="hfile"> - a HANDLE object to the file that is read.</param>
+/// <param name="buffer"> - a char* object containing the data that will be written.</param>
+/// <param name="size"> - an int containing the message's length. (should be equal to strlen(buffer)).</param>
+/// <returns> The function returns 0 if succeeded, 1 otherwise.</returns> 
+int readFileSimple(HANDLE hfile, char* buffer, int size)
 {
-	//DWORD size = GetFileSize(hfile, NULL);
+
 	if (ReadFromFile(hfile, buffer, size))
 	{
 		return 1;
@@ -135,20 +163,27 @@ int readFileSimple(HANDLE hfile, char *buffer, int size)
 
 	return 0;
 }
-
-int openFileSimple(HANDLE *hfile, char* fileName, int index, int format)
+/// <summary>
+/// allocating memmory for the buffer and reading the file
+/// </summary>
+/// <param name="hfile"> a HANDLE* object to which the function will place the created file handle. should be initiated to NULL.</param>
+/// <param name="fileName">a char* object containing the file's name</param>
+/// <param name="index">School Number</param>
+/// <param name="format">desired access mode to the file. 0-read; 1-write</param>
+/// <returns>returns 0 if secceeded, 1 otherwise</returns>
+int openFileSimple(HANDLE* hfile, char* fileName, int index, int format)
 {
 
-	int a = (strlen(".////.txt") + 2*strlen(fileName) + calcDigitsNum(index))+1;
+	int a = (strlen(".////.txt") + 2 * strlen(fileName) + calcDigitsNum(index)) + 1;
 	char* buffer;
-	buffer = malloc(sizeof(char*) * (strlen(".////.txt") + 2*strlen(fileName) + calcDigitsNum(index))+1);
+	buffer = malloc(sizeof(char*) * (strlen(".////.txt") + 2 * strlen(fileName) + calcDigitsNum(index)) + 1);
 	if (buffer == NULL)
 	{
-		//printf("error allocating memory\n");
+		printf("error allocating memory\n");
 		return 1;
 	}
-	sprintf_s(buffer, (strlen(".////.txt") + 2*strlen(fileName) + calcDigitsNum(index)), ".\\%s\\%s%d.txt", fileName,fileName, index);
-	
+	sprintf_s(buffer, (strlen(".////.txt") + 2 * strlen(fileName) + calcDigitsNum(index)), ".\\%s\\%s%d.txt", fileName, fileName, index);
+
 	if (openFile(hfile, buffer, format))
 	{
 		//first file failed
@@ -158,8 +193,13 @@ int openFileSimple(HANDLE *hfile, char* fileName, int index, int format)
 	free(buffer);
 	return 0;
 }
-
-int openAllFiles(HANDLE *allHandles, int index)
+/// <summary>
+/// Calling Function that reads/writes to/from a file
+/// </summary>
+/// <param name="allHandles">  a HANDLE* object containing Handles to all Files</param>
+/// <param name="index"> School Number</param>
+/// <returns>Returns number of files opened. Value less than 5 isnt good</returns>
+int openAllFiles(HANDLE* allHandles, int index)
 {
 	if (openFileSimple(&(allHandles[0]), "Real", index, READ))
 	{
@@ -170,7 +210,7 @@ int openAllFiles(HANDLE *allHandles, int index)
 	{
 		return 1;
 	}
-	
+
 	if (openFileSimple(&(allHandles[2]), "Eng", index, READ))
 	{
 		return 2;
@@ -187,22 +227,32 @@ int openAllFiles(HANDLE *allHandles, int index)
 
 	return 5;
 }
-
+/// <summary>
+/// Calculating the Weighted arithmetic mean
+/// </summary>
+/// <param name="weights"> weights of each subject from cmd</param>
+/// <param name="grades">array of grades for a specific student </param>
+/// <returns>returns an int Average to be Written into Results file</returns>
 int calcAvg(int weights[], int grades[])
 {
 	float avg = 0;
-	float weight_sum=0;
+	float weight_sum = 0;
 	for (int i = 0; i < 4; i++)
 	{
-		avg += weights[i] * grades[i];
+		avg += (weights[i] * 0.01) * grades[i];
 		weight_sum += weights[i];
 	}
-	return (int)(avg / weight_sum);
+	return (int)(avg); // Converting from float to int.
 }
-
+/// <summary>
+/// Creating Results Directory, initializing all Handles to NULL, extracting values from cmd and Invoking our main func which opens threads
+/// </summary>
+/// <param name="argc">number of arguments </param>
+/// <param name="argv">a Char* type containing all of the arguments given</param>
+/// <returns>returns 0 if secceeded, 1 otherwise</returns>
 int main(int argc, char* argv[])
 {
-	if (argc != 6)
+	if (argc != 6) //checking enough arguments
 	{
 		printf("Arguments Error\n");
 		return 1;
@@ -215,10 +265,11 @@ int main(int argc, char* argv[])
 	HANDLE ResultsFile = NULL;			// handle to the plain text file
 
 
-	//if (createDir("Results"))
-	//{
-	//	//return 1;
-	//}
+	if (createDir("Results"))
+	{
+		printf("Error while creating directory\n");
+		return 1;
+	}
 
 	HANDLE threadHandles[10] = { NULL };
 	HANDLE allHandles[5] = { RealFile , HumanFile , EngFile, EvalFile, ResultsFile };
@@ -228,56 +279,42 @@ int main(int argc, char* argv[])
 	weights[1] = strtol(argv[3], NULL, 10);
 	weights[2] = strtol(argv[4], NULL, 10);
 	weights[3] = strtol(argv[5], NULL, 10);
-	//int count = openAllFiles(allHandles, 0);
-	//threadExecute(1, weights);
 
-	
-	int *indexes;
+	int* indexes;
 
-	int schoolNum = strtol(argv[1], NULL, 10);
+	int schoolNum = strtol(argv[1], NULL, 10); //converting String to int
 	indexes = malloc(schoolNum * sizeof(int));
 	if (indexes == NULL)
 	{
-
+		printf("error allocating memory\n");
+		return 1;
 	}
 
-	//printf("starting thread\n");
 	int i, j;
-	for (i = 0; i < schoolNum; i+=10)
+	for (i = 0; i < schoolNum; i += 10) // first loop each time add 10 Threads
 	{
-		for (j = 0; j < 10; j++)
+		for (j = 0; j < 10; j++) // Open Max 10 Threads 
 		{
-			if (i + j >= schoolNum)
+			if (i + j >= schoolNum) // if in the end we dont need 10 threads stop opening them
 				break;
-			indexes[i+j] = i+j;
+			indexes[i + j] = i + j;
 			if (openThread(&threadHandles[j], &threadExecute, indexes[i + j], &arr[j]))
 			{
+				printf("error opening Thread %d\n", j);//Thread wont open, Inform the User and Continue
 				continue;
 			}
 		}
 		WaitForMultipleObjects(j, threadHandles, 1, 10000000);
-		
+
 		for (int k = 0; k < j; k++)
 		{
-			if (closeFile(&(threadHandles[k])))
+			if (closeProcess(&(threadHandles[k])))
 			{
+				printf("error closing Thread%d\n", k);//Thread wont close, Inform the User and Continue
 				continue;
 			}
 		}
 	}
-
-	//openThread(&threadHandles[0], &threadExecute, indexes[1], &arr[0]);
-	//WaitForMultipleObjects(1, &threadHandle, 1, INFINITE);
-	//WaitForSingleObject(threadHandle, 10000000);
-	//closeFile(&threadHandle);
 	free(indexes);
-	//return (count!=5)?1:exitCode(allHandles, count);
-
-	//HANDLE hfiles[5] = { 0 }; //array of the handles to use when exitting the code
-
-
-	//return exitCode(allHandles, 5);
-
-	
 	return 0;
 }
