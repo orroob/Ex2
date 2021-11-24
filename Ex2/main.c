@@ -12,7 +12,7 @@
 /*
 HW2
 Philip Dolav 322656273
-Or Roob
+Or Roob      212199970
 */
 
 
@@ -77,18 +77,18 @@ DWORD WINAPI threadExecute(int index)
 		size = GetFileSize(allHandles[i], NULL);
 		if (size == INVALID_FILE_SIZE)
 			break;
-		//allFilesData[i] = malloc(sizeof(char*) * size);
-		/*if (allFilesData[i] == NULL)
+		allFilesData[i] = malloc(sizeof(char*) * size);
+		if (allFilesData[i] == NULL)
 		{
 			printf("error allocating memory\n");
 			return 1;
-		}*/
+		}
 		readFileSimple(allHandles[i], allFilesData[i], size);
 	}
 
 
-	char* RealFileData=NULL, * HumanFileData = NULL, * EngFileData = NULL, * EvalFileData = NULL, * ResultsFileData = NULL;
-	/*RealFileData = calloc(5, sizeof(char));
+	char* RealFileData, * HumanFileData, * EngFileData, * EvalFileData, * ResultsFileData;
+	RealFileData = calloc(5, sizeof(char));
 	if (RealFileData == NULL)
 	{
 		printf("error allocating memory\n");
@@ -111,7 +111,7 @@ DWORD WINAPI threadExecute(int index)
 	{
 		printf("error allocating memory\n");
 		return 1;
-	}*/
+	}
 	int maxSize = 10;
 	const char delim[] = "\n";
 	int grades[4] = { 0 };
