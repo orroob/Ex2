@@ -1,13 +1,20 @@
 #define _CRT_SECURE_NO_WARNINGS
 #define READ 0
 #define WRITE 1
-
+ #define _CRTDBG_MAP_ALLOC
+#include <crtdbg.h>
 #include <string.h>
 #include <Windows.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "FileHandling.h"
 #include "ProcessHandling.h"
+/*
+HW2
+Philip Dolav 322656273
+Or Roob      212199970
+*/
+
 
 int weights[4]; // Global Parameter that each Thread gets from cmd
 
@@ -26,6 +33,7 @@ int exitCode(HANDLE hfiles[], int handlesNum)
 	}
 	return exitCode;
 }
+
 /// <summary>
 /// This function extracts number of digits. for example 100/10 = 3
 /// </summary>
@@ -45,6 +53,7 @@ int calcDigitsNum(int num)
 	}
 	return count;
 }
+
 /// <summary>
 /// this function opens all files needed for the specific Thread with its index,calculates the average student by student and then
 ///writes all of the grades to Results#index file
@@ -76,43 +85,24 @@ DWORD WINAPI threadExecute(int index)
 			printf("error allocating memory\n");
 			return 1;
 		}
-		readFileSimple(allHandles[i], allFilesData[i], size);
+		if (readFileSimple(allHandles[i], allFilesData[i], size))
+		{
+			printf("Error reading from file\n");
+			return 1;
+		}
+		
 	}
 
-
-	char* RealFileData, * HumanFileData, * EngFileData, * EvalFileData, * ResultsFileData;
-	RealFileData = calloc(5, sizeof(char));
-	if (RealFileData == NULL)
-	{
-		//printf("error allocating memory\n");
-		return 1;
-	}
-	HumanFileData = calloc(5, sizeof(char));
-	if (HumanFileData == NULL)
-	{
-		//printf("error allocating memory\n");
-		return 1;
-	}
-	EngFileData = calloc(5, sizeof(char));
-	if (EngFileData == NULL)
-	{
-		//printf("error allocating memory\n");
-		return 1;
-	}
-	EvalFileData = calloc(5, sizeof(char));
-	if (EvalFileData == NULL)
-	{
-		//printf("error allocating memory\n");
-		return 1;
-	}
-	int maxSize = 10;
+	char* RealFileData = NULL, * HumanFileData = NULL, * EngFileData = NULL, * EvalFileData = NULL, * ResultsFileData = NULL;
+	
 	const char delim[] = "\n";
 	int grades[4] = { 0 };
 	int result = 0;
 	char result_str[6] = { 0 };
 
+	char* temp0 = allFilesData[0], * temp1 = allFilesData[1], * temp2 = allFilesData[2], * temp3 = allFilesData[3];
 
-	while ((RealFileData) != NULL) // While we didnt get to the end of our Files
+	do// While we didnt get to the end of our Files
 	{	// Start parsing the file grade by grade with Specified Delimiter \n
 		RealFileData = strtok_s(allFilesData[0], delim, &allFilesData[0]);
 		HumanFileData = strtok_s(allFilesData[1], delim, &allFilesData[1]);
@@ -130,19 +120,21 @@ DWORD WINAPI threadExecute(int index)
 
 		sprintf(result_str, "%d\r\n", result);  //adding School Number to the end of file name.
 
-		if (WriteToFile(allHandles[4], result_str, strlen(result_str))) // Free Memory if failed writing
+		if (WriteToFile(allHandles[4], result_str, strlen(result_str))) // Free Memory and return if failed writing
 		{
-			free(RealFileData);
-			free(HumanFileData);
-			free(EngFileData);
-			free(EvalFileData);
+			free(temp0);
+			free(temp1);
+			free(temp2);
+			free(temp3);
 			return 1;
 		}
-	}
-	free(RealFileData);
-	free(HumanFileData);
-	free(EngFileData);
-	free(EvalFileData);
+	} while ((RealFileData) != NULL);
+	
+	free(temp0);
+	free(temp1);
+	free(temp2);
+	free(temp3);
+
 	return exitCode(allHandles, 5);
 }
 
@@ -155,14 +147,13 @@ DWORD WINAPI threadExecute(int index)
 /// <returns> The function returns 0 if succeeded, 1 otherwise.</returns> 
 int readFileSimple(HANDLE hfile, char* buffer, int size)
 {
-
 	if (ReadFromFile(hfile, buffer, size))
 	{
 		return 1;
 	}
-
 	return 0;
 }
+
 /// <summary>
 /// allocating memmory for the buffer and reading the file
 /// </summary>
@@ -173,8 +164,6 @@ int readFileSimple(HANDLE hfile, char* buffer, int size)
 /// <returns>returns 0 if secceeded, 1 otherwise</returns>
 int openFileSimple(HANDLE* hfile, char* fileName, int index, int format)
 {
-
-	int a = (strlen(".////.txt") + 2 * strlen(fileName) + calcDigitsNum(index)) + 1;
 	char* buffer;
 	buffer = malloc(sizeof(char*) * (strlen(".////.txt") + 2 * strlen(fileName) + calcDigitsNum(index)) + 1);
 	if (buffer == NULL)
@@ -182,6 +171,8 @@ int openFileSimple(HANDLE* hfile, char* fileName, int index, int format)
 		printf("error allocating memory\n");
 		return 1;
 	}
+
+	//length of the file's directory
 	sprintf_s(buffer, (strlen(".////.txt") + 2 * strlen(fileName) + calcDigitsNum(index)), ".\\%s\\%s%d.txt", fileName, fileName, index);
 
 	if (openFile(hfile, buffer, format))
@@ -193,6 +184,7 @@ int openFileSimple(HANDLE* hfile, char* fileName, int index, int format)
 	free(buffer);
 	return 0;
 }
+
 /// <summary>
 /// Calling Function that reads/writes to/from a file
 /// </summary>
@@ -227,6 +219,7 @@ int openAllFiles(HANDLE* allHandles, int index)
 
 	return 5;
 }
+
 /// <summary>
 /// Calculating the Weighted arithmetic mean
 /// </summary>
@@ -244,11 +237,12 @@ int calcAvg(int weights[], int grades[])
 	}
 	return (int)(avg); // Converting from float to int.
 }
+
 /// <summary>
 /// Creating Results Directory, initializing all Handles to NULL, extracting values from cmd and Invoking our main func which opens threads
 /// </summary>
-/// <param name="argc">number of arguments </param>
-/// <param name="argv">a Char* type containing all of the arguments given</param>
+/// <param name="argc"> - number of arguments </param>
+/// <param name="argv"> - a Char* type containing all of the arguments given</param>
 /// <returns>returns 0 if secceeded, 1 otherwise</returns>
 int main(int argc, char* argv[])
 {
@@ -258,31 +252,31 @@ int main(int argc, char* argv[])
 		return 1;
 	}
 
-	HANDLE RealFile = NULL;				// handle to the plain text file
-	HANDLE HumanFile = NULL;			// handle to the key text file
-	HANDLE EngFile = NULL;				// handle to the plain text file
-	HANDLE EvalFile = NULL;				// handle to the plain text file
-	HANDLE ResultsFile = NULL;			// handle to the plain text file
-
-
-	if (createDir("Results"))
+	//Create specified directory
+	if (createDir(".\\Results"))
 	{
 		printf("Error while creating directory\n");
 		return 1;
 	}
 
+	HANDLE RealFile = NULL;				// handle to the "RealFile" text file
+	HANDLE HumanFile = NULL;			// handle to the "HumanFile" text file
+	HANDLE EngFile = NULL;				// handle to the "EngFile" text file
+	HANDLE EvalFile = NULL;				// handle to the "EvalFile" text file
+	HANDLE ResultsFile = NULL;			// handle to the "ResultsFile" text file
+
 	HANDLE threadHandles[10] = { NULL };
 	HANDLE allHandles[5] = { RealFile , HumanFile , EngFile, EvalFile, ResultsFile };
-	DWORD arr[10];
+	DWORD threadIDs[10];
 
-	weights[0] = strtol(argv[2], NULL, 10);
-	weights[1] = strtol(argv[3], NULL, 10);
+	// put all arguments (the weights) in global variables for the threads' usage.
+	weights[0] = strtol(argv[2], NULL, 10);		//converting String to int
+	weights[1] = strtol(argv[3], NULL, 10);		
 	weights[2] = strtol(argv[4], NULL, 10);
 	weights[3] = strtol(argv[5], NULL, 10);
 
-	int* indexes;
-
-	int schoolNum = strtol(argv[1], NULL, 10); //converting String to int
+	int* indexes;									//array holding the thread's indexes
+	int schoolNum = strtol(argv[1], NULL, 10);		//converting String to int
 	indexes = malloc(schoolNum * sizeof(int));
 	if (indexes == NULL)
 	{
@@ -291,30 +285,34 @@ int main(int argc, char* argv[])
 	}
 
 	int i, j;
-	for (i = 0; i < schoolNum; i += 10) // first loop each time add 10 Threads
+	for (i = 0; i < schoolNum; i += 10) // first loop each time add 10 Threads, until all results are calculated
 	{
 		for (j = 0; j < 10; j++) // Open Max 10 Threads 
 		{
-			if (i + j >= schoolNum) // if in the end we dont need 10 threads stop opening them
+			if (i + j >= schoolNum) // in case the number of schools does not divide by 10, stop opening threads
 				break;
+
 			indexes[i + j] = i + j;
-			if (openThread(&threadHandles[j], &threadExecute, indexes[i + j], &arr[j]))
+			if (openThread(&threadHandles[j], &threadExecute, indexes[i + j], &threadIDs[j]))
 			{
-				printf("error opening Thread %d\n", j);//Thread wont open, Inform the User and Continue
+				printf("error opening Thread %d\n", j);	//Thread won't open, Inform the User and Continue
 				continue;
 			}
 		}
-		WaitForMultipleObjects(j, threadHandles, 1, 10000000);
+		WaitForMultipleObjects(j, threadHandles, 1, 10000000);		// Wait for all threads to finish before continuing
 
-		for (int k = 0; k < j; k++)
+		for (int k = 0; k < j; k++)	// Close all opened threads
 		{
 			if (closeProcess(&(threadHandles[k])))
 			{
-				printf("error closing Thread%d\n", k);//Thread wont close, Inform the User and Continue
+				printf("error closing Thread%d\n", k);	//Thread wont close, Inform the User and Continue
 				continue;
 			}
 		}
 	}
+
 	free(indexes);
+	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+	int a =  _CrtDumpMemoryLeaks();
 	return 0;
 }
